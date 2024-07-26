@@ -3,7 +3,6 @@ import shutil
 
 import torch
 import torch.utils.data
-# import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
@@ -13,17 +12,14 @@ import re
 from helpers import makedir
 import model
 import push
-import prune
 import train_and_test as tnt
 import save
 from log import create_logger
 from preprocess import mean, std, preprocess_input_function
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-gpuid', nargs=1, type=str, default='0') # python3 main.py -gpuid=0,1,2,3
+parser.add_argument('dataset', choices=['Birds', 'StanfordCars', 'StanfordDogs'])
 args = parser.parse_args()
-os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid[0]
-print(os.environ['CUDA_VISIBLE_DEVICES'])
 
 # book keeping namings and code
 from settings import base_architecture, img_size, prototype_shape, num_classes, \
@@ -48,11 +44,12 @@ prototype_self_act_filename_prefix = 'prototype-self-act'
 proto_bound_boxes_filename_prefix = 'bb'
 
 # load the data
-from settings import train_dir, test_dir, train_push_dir, \
-                     train_batch_size, test_batch_size, train_push_batch_size
+train_dir = os.path.join('datasets', args.dataset, 'train_cropped_augmented')
+test_dir = os.path.join('datasets', args.dataset, 'test_cropped')
+train_push_dir = os.path.join('datasets', args.dataset, 'train_cropped')
+from settings import train_batch_size, test_batch_size, train_push_batch_size
 
-normalize = transforms.Normalize(mean=mean,
-                                 std=std)
+normalize = transforms.Normalize(mean=mean, std=std)
 
 # all datasets
 # train set
@@ -153,7 +150,7 @@ for epoch in range(num_train_epochs):
     accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                     class_specific=class_specific, log=log)
     save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'nopush', accu=accu,
-                                target_accu=0.70, log=log)
+                                target_accu=0.70, log=log, dataset=args.dataset)
 
     if epoch >= push_start and epoch in push_epochs:
         push.push_prototypes(
@@ -172,7 +169,7 @@ for epoch in range(num_train_epochs):
         accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                         class_specific=class_specific, log=log)
         save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'push', accu=accu,
-                                    target_accu=0.70, log=log)
+                                    target_accu=0.70, log=log, dataset=args.dataset)
 
         if prototype_activation_function != 'linear':
             tnt.last_only(model=ppnet_multi, log=log)
@@ -183,7 +180,6 @@ for epoch in range(num_train_epochs):
                 accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                                 class_specific=class_specific, log=log)
                 save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + '_' + str(i) + 'push', accu=accu,
-                                            target_accu=0.70, log=log)
+                                            target_accu=0.70, log=log, dataset=args.dataset)
    
 logclose()
-

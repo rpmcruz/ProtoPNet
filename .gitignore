@@ -1,0 +1,5 @@
+/__pycache__/
+/datasets/
+/pretrained_models/
+/saved_models/
+/sbatch-*.txt

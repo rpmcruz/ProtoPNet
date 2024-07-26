@@ -1,3 +1,8 @@
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('dataset', choices=['Birds', 'StanfordCars', 'StanfordDogs'])
+args = parser.parse_args()
+
 import Augmentor
 import os
 def makedir(path):
@@ -7,9 +12,8 @@ def makedir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-datasets_root_dir = './datasets/cub200_cropped/'
-dir = datasets_root_dir + 'train_cropped/'
-target_dir = datasets_root_dir + 'train_cropped_augmented/'
+dir = os.path.join(os.getcwd(), 'datasets', args.dataset, 'train_cropped')
+target_dir = os.path.join(os.getcwd(), 'datasets', args.dataset, 'train_cropped_augmented')
 
 makedir(target_dir)
 folders = [os.path.join(dir, folder) for folder in next(os.walk(dir))[1]]
@@ -18,26 +22,36 @@ target_folders = [os.path.join(target_dir, folder) for folder in next(os.walk(di
 for i in range(len(folders)):
     fd = folders[i]
     tfd = target_folders[i]
+    print(fd, tfd)
     # rotation
     p = Augmentor.Pipeline(source_directory=fd, output_directory=tfd)
     p.rotate(probability=1, max_left_rotation=15, max_right_rotation=15)
     p.flip_left_right(probability=0.5)
-    for i in range(10):
-        p.process()
+    i = 0
+    while i < 10:
+        try: p.process()
+        except: pass
+        else: i += 1
     del p
     # skew
     p = Augmentor.Pipeline(source_directory=fd, output_directory=tfd)
     p.skew(probability=1, magnitude=0.2)  # max 45 degrees
     p.flip_left_right(probability=0.5)
-    for i in range(10):
-        p.process()
+    i = 0
+    while i < 10:
+        try: p.process()
+        except: pass
+        else: i += 1
     del p
     # shear
     p = Augmentor.Pipeline(source_directory=fd, output_directory=tfd)
     p.shear(probability=1, max_shear_left=10, max_shear_right=10)
     p.flip_left_right(probability=0.5)
-    for i in range(10):
-        p.process()
+    i = 0
+    while i < 10:
+        try: p.process()
+        except: pass
+        else: i += 1
     del p
     # random_distortion
     #p = Augmentor.Pipeline(source_directory=fd, output_directory=tfd)
